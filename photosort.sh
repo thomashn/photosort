@@ -34,7 +34,7 @@ fi
 # If somebody is transfering something; we don't want to interfere.
 # The assumption is that if files are open, the script should not
 # do anything. 
-if [[ -n "$(lsof +d $MONITOR)" ]]; then
+if ! lsof +d $MONITOR; then
     echo "Files are in use"; rm $LOCK; exit 1
 fi
 
