@@ -19,8 +19,14 @@ echo "$$" > $LOCK
 
 
 MONITOR=$1
+if [ ! -d $MONITOR ]; then
+    echo "Directory $MONITOR does not exists"; rm $LOCK; exit 1
+fi
 PROCESSING=${MONITOR}/.processing
 ARCHIVE=$2
+if [ ! -d $ARCHIVE ]; then
+    echo "Directory $ARCHIVE does not exists"; rm $LOCK; exit 1
+fi
 
 
 # If somebody is transfering something; we don't want to interfere.
