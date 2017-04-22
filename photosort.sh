@@ -11,10 +11,8 @@ set -o nounset
 # We don't want multiple processes at once
 LOCK=/tmp/photosort.lock
 if [ -f $LOCK ]; then
-    if ps -e -o pid | grep $(cat "$LOCK"); then
+    if ps | grep $(cat "$LOCK"); then
         echo "Photo sorting already running"; exit 1
-    else
-        echo "No process running"
     fi
 fi
 echo "$$" > $LOCK
