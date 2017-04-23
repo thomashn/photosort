@@ -82,9 +82,9 @@ exiftool -P -d "$ARCHIVE/%Y/%m/%Y%m%d_%H%M%S" -ext mov -ext jpg \
 # When we are done, we also want to cleanup the monitor folder
 # so that people may add entire folders, as this eases the whole
 # copy process.
-EMPTY_DIRS=$(find $MONITOR -type d -empty)
+EMPTY_DIRS=$(find $MONITOR -type d -empty \( ! -iname ".*" \))
 if [ ! -z ${EMPTY_DIRS} ]; then
-    rmdir -p $EMPTY_DIRS
+    rmdir -p ${EMPTY_DIRS}
 fi
 
 rm $LOCK
