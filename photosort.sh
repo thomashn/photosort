@@ -8,8 +8,19 @@ set -o pipefail
 set -o nounset
 
 
+MONITOR=$1
+if [ ! -d $MONITOR ]; then
+    echo "Directory $MONITOR does not exists"; exit 1
+fi
+PROCESSING=${MONITOR}/.processing
+ARCHIVE=$2
+if [ ! -d $ARCHIVE ]; then
+    echo "Directory $ARCHIVE does not exists"; exit 1
+fi
+
+
 # We don't want multiple processes at once
-LOCK=/tmp/photosort.lock
+LOCK=/tmp/photosort_$(basename ${MONITOR}).lock
 if [ -f $LOCK ]; then
     if ps | grep $(cat "$LOCK"); then
         echo "Photo sorting already running"; exit 1
@@ -18,16 +29,6 @@ fi
 echo "$$" > $LOCK
 
 
-MONITOR=$1
-if [ ! -d $MONITOR ]; then
-    echo "Directory $MONITOR does not exists"; rm $LOCK; exit 1
-fi
-PROCESSING=${MONITOR}/.processing
-ARCHIVE=$2
-if [ ! -d $ARCHIVE ]; then
-    echo "Directory $ARCHIVE does not exists"; rm $LOCK; exit 1
-fi
-
 
 if [ ! -d $PROCESSING ]; then
    echo "Creating dir processing directory $(pwd)/$PROCESSING"
@@ -35,11 +36,7 @@ if [ ! -d $PROCESSING ]; then
 fi
 
 
-# Files are moved to another folde since we don't want changes to occur
-# during processing. Moving should be done on the same filesystem; keeping
-# it somewhat "atomic".
 FILES=$(find $MONITOR -maxdepth 1 -iregex '.*\.\(mp4\|mov\|jpg\)')
-
 if [[ -z "$FILES" ]]; then
     echo "No new files where found in $(pwd)/$MONITOR"
 else
@@ -50,6 +47,9 @@ else
         echo "Files are in use"; rm $LOCK; exit 1
     fi
 
+    # Files are moved to another folde since we don't want changes to occur
+    # during processing. Moving should be done on the same filesystem; keeping
+    # it somewhat "atomic".
     for FILE in $FILES; do
         echo "Moving $FILE to $PROCESSING for processing"
         mv $FILE $PROCESSING
@@ -77,5 +77,12 @@ exiftool -P -d "$ARCHIVE/%Y/%m/%Y%m%d_%H%M%S" -ext mov -ext jpg \
     '-FileName<${CreateDate}%-c.%le' \
     '-FileName<${DateTimeOriginal}%-c.%le' \
     $PROCESSING
+
+
+# When we are done, we also want to cleanup the monitor folder
+# so that people may add entire folders, as this eases the whole
+# copy process.
+EMPTY_DIRS=$(find $MONITOR -type d -empty)
+rmdir -p $EMPTY_DIRS
 
 rm $LOCK
