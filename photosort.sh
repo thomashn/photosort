@@ -84,7 +84,7 @@ exiftool -P -d "$ARCHIVE/%Y/%m/%Y%m%d_%H%M%S" -ext mov -ext jpg \
 # copy process.
 EMPTY_DIRS=$(find $MONITOR -type d -empty \( ! -iname ".*" \))
 if [ ! -z ${EMPTY_DIRS} ]; then
-    rmdir -p ${EMPTY_DIRS}
+    rmdir ${EMPTY_DIRS}
 fi
 
 rm $LOCK
