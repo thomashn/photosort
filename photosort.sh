@@ -29,25 +29,27 @@ if [ ! -d $ARCHIVE ]; then
 fi
 
 
-# If somebody is transfering something; we don't want to interfere.
-# The assumption is that if files are open, the script should not
-# do anything. 
-if lsof +d $MONITOR | grep ' REG '; then
-    echo "Files are in use"; rm $LOCK; exit 1
+if [ ! -d $PROCESSING ]; then
+   echo "Creating dir processing directory $(pwd)/$PROCESSING"
+   mkdir $PROCESSING
 fi
 
 
 # Files are moved to another folde since we don't want changes to occur
 # during processing. Moving should be done on the same filesystem; keeping
 # it somewhat "atomic".
-if [ ! -d $PROCESSING ]; then
-   echo "Creating dir processing directory $(pwd)/$PROCESSING"
-   mkdir $PROCESSING
-fi
 FILES=$(find $MONITOR -maxdepth 1 -iregex '.*\.\(mp4\|mov\|jpg\)')
+
 if [[ -z "$FILES" ]]; then
     echo "No new files where found in $(pwd)/$MONITOR"
 else
+    # If somebody is transfering something; we don't want to interfere.
+    # The assumption is that if files are open, the script should not
+    # do anything. 
+    if lsof $FILES | grep ' REG '; then
+        echo "Files are in use"; rm $LOCK; exit 1
+    fi
+
     for FILE in $FILES; do
         echo "Moving $FILE to $PROCESSING for processing"
         mv $FILE $PROCESSING
