@@ -9,19 +9,19 @@ set -o nounset
 
 
 MONITOR=$1
-if [ ! -d $MONITOR ]; then
+if [ ! -d "${MONITOR}" ]; then
     echo "Directory $MONITOR does not exists"; exit 1
 fi
-PROCESSING=${MONITOR}/.processing
+PROCESSING="${MONITOR}/.processing"
 ARCHIVE=$2
-if [ ! -d $ARCHIVE ]; then
+if [ ! -d "${ARCHIVE}" ]; then
     echo "Directory $ARCHIVE does not exists"; exit 1
 fi
 
 
 # We don't want multiple processes at once
-LOCK=/tmp/photosort_$(basename ${MONITOR}).lock
-if [ -f $LOCK ]; then
+LOCK=/tmp/photosort_$(basename "${MONITOR}").lock
+if [ -f "$LOCK" ]; then
     if ps | grep $(cat "$LOCK"); then
         echo "Photo sorting already running"; exit 1
     fi
@@ -30,13 +30,13 @@ echo "$$" > $LOCK
 
 
 
-if [ ! -d $PROCESSING ]; then
+if [ ! -d "$PROCESSING" ]; then
    echo "Creating dir processing directory $(pwd)/$PROCESSING"
-   mkdir $PROCESSING
+   mkdir "$PROCESSING"
 fi
 
 
-FILES=$(find $MONITOR -maxdepth 1 -iregex '.*\.\(mp4\|mov\|jpg\)')
+FILES=$(find "$MONITOR" -maxdepth 1 -iregex '.*\.\(mp4\|mov\|jpg\)')
 if [[ -z "$FILES" ]]; then
     echo "No new files where found in $(pwd)/$MONITOR"
 else
@@ -52,7 +52,7 @@ else
     # it somewhat "atomic".
     for FILE in $FILES; do
         echo "Moving $FILE to $PROCESSING for processing"
-        mv $FILE $PROCESSING
+        mv "$FILE" "$PROCESSING"
     done
 fi
 
@@ -60,13 +60,13 @@ fi
 # Unless you are very orderly, you probably have transfered some of the 
 # photos before.
 echo "Looking for duplicates in $(pwd)/$PROCESSING against $(pwd)/$ARCHIVE ..."
-DUPES=$(fdupes -r $PROCESSING $ARCHIVE | grep ${PROCESSING}/)
+DUPES=$(fdupes -r "$PROCESSING" "$ARCHIVE" | grep "${PROCESSING}"/)
 if [[ -z "$DUPES" ]]; then
     echo "No duplicates where found in $(pwd)/$PROCESSING"
 else
     for DUPE in $DUPES; do
         echo "Removing duplicate $DUPE"
-        rm $DUPE
+        rm "$DUPE"
     done
 fi
 
@@ -76,15 +76,15 @@ fi
 exiftool -P -d "$ARCHIVE/%Y/%m/%Y%m%d_%H%M%S" -ext mov -ext jpg \
     '-FileName<${CreateDate}%-c.%le' \
     '-FileName<${DateTimeOriginal}%-c.%le' \
-    $PROCESSING
+    "$PROCESSING"
 
 
 # When we are done, we also want to cleanup the monitor folder
 # so that people may add entire folders, as this eases the whole
 # copy process.
-EMPTY_DIRS=$(find $MONITOR -type d -empty \( ! -iname ".*" \))
-if [ ! -z ${EMPTY_DIRS} ]; then
-    rmdir ${EMPTY_DIRS}
+EMPTY_DIRS=$(find "$MONITOR" -type d -empty \( ! -iname ".*" \))
+if [ ! -z "${EMPTY_DIRS}" ]; then
+    rmdir "${EMPTY_DIRS}"
 fi
 
 rm $LOCK
