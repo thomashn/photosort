@@ -9,11 +9,13 @@ set -o nounset
 
 
 MONITOR=$1
+echo "Monitor directory $1"
 if [ ! -d "${MONITOR}" ]; then
     echo "Directory $MONITOR does not exists"; exit 1
 fi
 PROCESSING="${MONITOR}/.processing"
 ARCHIVE=$2
+echo "Archive into directory $2"
 if [ ! -d "${ARCHIVE}" ]; then
     echo "Directory $ARCHIVE does not exists"; exit 1
 fi
@@ -21,12 +23,13 @@ fi
 
 # We don't want multiple processes at once
 LOCK=/tmp/photosort_$(basename "${MONITOR}").lock
+echo "Check lock $LOCK"
 if [ -f "$LOCK" ]; then
     if ps | grep $(cat "$LOCK"); then
         echo "Photo sorting already running"; exit 1
     fi
 fi
-echo "$$" > $LOCK
+echo "$$" > "$LOCK"
 
 
 
@@ -43,8 +46,8 @@ else
     # If somebody is transfering something; we don't want to interfere.
     # The assumption is that if files are open, the script should not
     # do anything. 
-    if lsof $FILES | grep ' REG '; then
-        echo "Files are in use"; rm $LOCK; exit 1
+    if lsof "$FILES" | grep ' REG '; then
+        echo "Files are in use"; rm "$LOCK"; exit 1
     fi
 
     # Files are moved to another folde since we don't want changes to occur
@@ -73,7 +76,7 @@ fi
 
 # We want to enforce our own naming scheme on all the files placed into the 
 # archive folder.
-exiftool -P -d "$ARCHIVE/%Y/%m/%Y%m%d_%H%M%S" -ext mov -ext jpg \
+exiftool -P -d "${ARCHIVE}/%Y/%m/%Y%m%d_%H%M%S" -ext mov -ext jpg \
     '-FileName<${CreateDate}%-c.%le' \
     '-FileName<${DateTimeOriginal}%-c.%le' \
     "$PROCESSING"
@@ -87,4 +90,4 @@ if [ ! -z "${EMPTY_DIRS}" ]; then
     rmdir "${EMPTY_DIRS}"
 fi
 
-rm $LOCK
+rm "$LOCK"
