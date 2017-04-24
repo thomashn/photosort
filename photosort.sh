@@ -22,7 +22,7 @@ fi
 
 
 # We don't want multiple processes at once
-LOCK=/tmp/photosort_$(basename "${MONITOR}").lock
+LOCK=$(echo $(/tmp/photosort_$(basename "${MONITOR}").lock) | tr " " "_")
 echo "Check lock $LOCK"
 if [ -f "$LOCK" ]; then
     if ps | grep $(cat "$LOCK"); then
@@ -46,9 +46,11 @@ else
     # If somebody is transfering something; we don't want to interfere.
     # The assumption is that if files are open, the script should not
     # do anything. 
-    if lsof "$FILES" | grep ' REG '; then
-        echo "Files are in use"; rm "$LOCK"; exit 1
-    fi
+    for FILE in $FILES; do
+        if lsof "$FILE" | grep ' REG '; then
+            echo "Files are in use"; rm "$LOCK"; exit 1
+        fi
+    done 
 
     # Files are moved to another folde since we don't want changes to occur
     # during processing. Moving should be done on the same filesystem; keeping
