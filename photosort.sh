@@ -22,7 +22,7 @@ fi
 
 
 # We don't want multiple processes at once
-LOCK=$(echo $(/tmp/photosort_$(basename "${MONITOR}").lock) | tr " " "_")
+LOCK=$(echo /tmp/photosort_$(basename "${MONITOR}").lock | tr " " "_")
 echo "Check lock $LOCK"
 if [ -f "$LOCK" ]; then
     if ps | grep $(cat "$LOCK"); then
@@ -39,43 +39,27 @@ if [ ! -d "$PROCESSING" ]; then
 fi
 
 
-FILES=$(find "$MONITOR" -maxdepth 1 -iregex '.*\.\(mp4\|mov\|jpg\)')
-if [[ -z "$FILES" ]]; then
-    echo "No new files where found in $(pwd)/$MONITOR"
-else
-    # If somebody is transfering something; we don't want to interfere.
-    # The assumption is that if files are open, the script should not
-    # do anything. 
-    for FILE in $FILES; do
-        if lsof "$FILE" | grep ' REG '; then
-            echo "Files are in use"; rm "$LOCK"; exit 1
+function move_only_closed {
+    OPEN=$(lsof "$MONITOR" | grep ' REG ')
+    while read FILE; do
+        if echo "$OPEN" | grep "$FILE"; then
+            echo "$FILE is in use"
+        else
+            echo "Moving $FILE to $1 for processing"
+            mv "$FILE" "$1"
         fi
-    done 
-
-    # Files are moved to another folde since we don't want changes to occur
-    # during processing. Moving should be done on the same filesystem; keeping
-    # it somewhat "atomic".
-    for FILE in $FILES; do
-        echo "Moving $FILE to $PROCESSING for processing"
-        mv "$FILE" "$PROCESSING"
     done
-fi
+}
+find "$MONITOR" -maxdepth 1 -iregex '.*\.\(mp4\|mov\|jpg\)' | move_only_closed "$PROCESSING" "$MONITOR"
 
 
 # Unless you are very orderly, you probably have transfered some of the 
 # photos before.
-echo "Looking for duplicates in $(pwd)/$PROCESSING against $(pwd)/$ARCHIVE ..."
-DUPES=$(fdupes -r "$PROCESSING" "$ARCHIVE" | grep "${PROCESSING}"/)
-if [[ -z "$DUPES" ]]; then
-    echo "No duplicates where found in $(pwd)/$PROCESSING"
-else
-    for DUPE in $DUPES; do
-        echo "Removing duplicate $DUPE"
-        rm "$DUPE"
-    done
-fi
-
-
+fdupes -r "$PROCESSING" "$ARCHIVE" | grep "${PROCESSING}" | while read FILE; do 
+    echo "Removing duplicate $FILE"
+    # rm $FILE
+done
+exit
 # We want to enforce our own naming scheme on all the files placed into the 
 # archive folder.
 exiftool -P -d "${ARCHIVE}/%Y/%m/%Y%m%d_%H%M%S" -ext mov -ext jpg \
@@ -87,9 +71,6 @@ exiftool -P -d "${ARCHIVE}/%Y/%m/%Y%m%d_%H%M%S" -ext mov -ext jpg \
 # When we are done, we also want to cleanup the monitor folder
 # so that people may add entire folders, as this eases the whole
 # copy process.
-EMPTY_DIRS=$(find "$MONITOR" -type d -empty \( ! -iname ".*" \))
-if [ ! -z "${EMPTY_DIRS}" ]; then
-    rmdir "${EMPTY_DIRS}"
-fi
+find "$MONITOR" -type d -empty \( ! -iname ".*" \) -delete
 
 rm "$LOCK"
