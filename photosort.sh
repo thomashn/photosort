@@ -40,9 +40,8 @@ fi
 
 
 function move_only_closed {
-    OPEN=$(lsof "$MONITOR" | grep ' REG ')
     while read FILE; do
-        if echo "$OPEN" | grep "$FILE"; then
+        if lsof "$FILE" | grep ' REG '; then
             echo "$FILE is in use"
         else
             echo "Moving $FILE to $1"
@@ -50,7 +49,7 @@ function move_only_closed {
         fi
     done
 }
-find "$MONITOR" -maxdepth 1 -iregex '.*\.\(mp4\|mov\|jpg\)' | move_only_closed "$PROCESSING" "$MONITOR"
+find "$MONITOR" -maxdepth 1 -iregex '.*\.\(mp4\|mov\|jpg\)' | move_only_closed "$PROCESSING"
 
 
 # Unless you are very orderly, you probably have transfered some of the 
