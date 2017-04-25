@@ -45,7 +45,7 @@ function move_only_closed {
         if echo "$OPEN" | grep "$FILE"; then
             echo "$FILE is in use"
         else
-            echo "Moving $FILE to $1 for processing"
+            echo "Moving $FILE to $1"
             mv "$FILE" "$1"
         fi
     done
@@ -57,9 +57,9 @@ find "$MONITOR" -maxdepth 1 -iregex '.*\.\(mp4\|mov\|jpg\)' | move_only_closed "
 # photos before.
 fdupes -r "$PROCESSING" "$ARCHIVE" | grep "${PROCESSING}" | while read FILE; do 
     echo "Removing duplicate $FILE"
-    # rm $FILE
+    rm "$FILE"
 done
-exit
+
 # We want to enforce our own naming scheme on all the files placed into the 
 # archive folder.
 exiftool -P -d "${ARCHIVE}/%Y/%m/%Y%m%d_%H%M%S" -ext mov -ext jpg \
