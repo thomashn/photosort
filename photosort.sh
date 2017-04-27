@@ -49,7 +49,7 @@ function move_only_closed {
         fi
     done
 }
-find "$MONITOR" -iregex '.*\.\(mp4\|mov\|jpg\)' | move_only_closed "$PROCESSING"
+find "$MONITOR" -iregex '.*\.\(mp4\|mov\|jpg\)' \( ! -iname ".*" \) | move_only_closed "$PROCESSING"
 
 
 # Unless you are very orderly, you probably have transfered some of the 
