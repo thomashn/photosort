@@ -49,7 +49,7 @@ function move_only_closed {
         fi
     done
 }
-find "$MONITOR" -maxdepth 1 -iregex '.*\.\(mp4\|mov\|jpg\)' | move_only_closed "$PROCESSING"
+find "$MONITOR" -iregex '.*\.\(mp4\|mov\|jpg\)' | move_only_closed "$PROCESSING"
 
 
 # Unless you are very orderly, you probably have transfered some of the 
@@ -58,6 +58,7 @@ fdupes -r "$PROCESSING" "$ARCHIVE" | grep "${PROCESSING}" | while read FILE; do
     echo "Removing duplicate $FILE"
     rm "$FILE"
 done
+
 
 # We want to enforce our own naming scheme on all the files placed into the 
 # archive folder.
